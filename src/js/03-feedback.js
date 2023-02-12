@@ -1,35 +1,44 @@
 import throttle from 'lodash.throttle';
 
+const LOCAL_KEY = 'feedback-form-state';
+
 const form = document.querySelector('.feedback-form');
-const email = document.querySelector('input');
-const textArea = document.querySelector('textarea');
+// console.log(form);
 
-const LOCALSTORAGE_KEY = 'feedback-form-state';
+// * слухачі кнопки та інпутів
+form.addEventListener('submit', onFormSubmit);
+form.addEventListener('input', throttle(onFormInput, 500)); // ставимо час для обновлення рядків
 
+// * провіряємо після перезагрузки вікна чи є щось в локальному сховищі
+const dataFromLocalStorage = JSON.parse(localStorage.getItem(LOCAL_KEY));
+form.elements.email.value = dataFromLocalStorage?.email || '';
+form.elements.message.value = dataFromLocalStorage?.message || '';
+
+// * створюємо об'єкт
 const formData = {};
+// console.log(formData);
 
-form.addEventListener('submit', handleFormSubmit);
-form.addEventListener('input', throttle(handleFormTextareaInput, 500));
+// * блокуємо обновлення сторінки та ресетуємо інпути + локальне сховище
+function onFormSubmit(e) {
+  e.preventDefault();
 
-messageTextareaInput();
+  const dataLocal = localStorage.getItem(LOCAL_KEY);
+  // console.log(dataLocal);
 
-function handleFormSubmit(event) {
-  event.preventDefault();
+  const autDataLocalStorage = JSON.parse(dataLocal);
 
-  event.currentTarget.reset();
-  localStorage.removeItem(LOCALSTORAGE_KEY);
+  localStorage.removeItem(LOCAL_KEY);
+  e.currentTarget.reset();
+  console.log(autDataLocalStorage);
 }
 
-function handleFormTextareaInput(event) {
-  formData[event.target.name] = event.target.value;
-  localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(formData));
-}
+// * виводимо значення з інпутів та записуємо в локальне сховище
+function onFormInput(e) {
+  formData[e.target.name] = e.target.value;
 
-function messageTextareaInput() {
-  const savedMessage = JSON.parse(localStorage.getItem(LOCALSTORAGE_KEY));
-  if (savedMessage) {
-    email.value = savedMessage.email;
-    textArea.value = savedMessage.message;
-    console.log(savedMessage);
-  }
+  const dataFromLocalStorage = JSON.parse(localStorage.getItem(LOCAL_KEY));
+  localStorage.setItem(
+    LOCAL_KEY,
+    JSON.stringify({ ...dataFromLocalStorage, [e.target.name]: e.target.value })
+  );
 }
